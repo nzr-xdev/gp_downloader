@@ -1,17 +1,16 @@
 """
 
 This is the core file for downloading music and data from Spotify, SoundCloud, and YT Music.
-It uses yt_dlp for downloading. Currently, it only supports SoundCloud and YouTube Musiс,
-while downloads from Spotify are redirected to YT Music.
+It uses yt_dlp for downloading. It natively supports SoundCloud and YouTube Music;
+if a Spotify link is provided, it redirects the download to YT Music after retrieving the metadata via spotify_scraper.
 It also uses FFmpeg for audio conversion and Mutagen for managing ID3 tags.
-WW
+
 """
 
 #Library
 from yt_dlp import YoutubeDL
 import os
-import spotipy
-from spotipy.oauth2 import SpotifyClientCredentials
+from spotify_scraper import SpotifyClient
 
 #YDL settings
 
@@ -43,13 +42,10 @@ ydl_opts = {
         'external_downloader_args': {'youtube': ['--js-runtimes', 'deno:bin/deno.exe']}
     }
 
-# Spotify settings
-auth_manager = SpotifyClientCredentials(client_id='Your_id', client_secret='Your_secret')
-sp = spotipy.Spotify(auth_manager=auth_manager)
-
+spotify_client = SpotifyClient()
 
 # Download music from YT Music or SoundCloud
-def download_from_ytsc(urls:list):
+def downloadf_ytsc(urls:list):
 
     with YoutubeDL(ydl_opts) as ydl:
 
@@ -57,24 +53,41 @@ def download_from_ytsc(urls:list):
             ydl.download(urls)
 
         except:
-            raise KeyError('An error occurred while trying to download music from YouTube or SoundCloud')
+            raise KeyError('An error occurred while trying to download music from YouTube or SoundCloud.')
 
 # Redirect Spotify downloads to YouTube
-def download_from_sfy(url:str):
+def downloadf_sfy(urls:list):
 
-    track_info = sp.track(url)
-    track_name = track_info['name']
-    track_artist = track_info['artists'][0]['name']
+    try:
+        for url in urls:
+            track = spotify_client.get_track_info(url)
+            track_name = track.get('name')
+            track_artist = track['artists'][0]['name'] if track.get('artists') else 'Unknown Artist'
 
-    search_query = f"ytsearch: {track_artist} {track_name}"
+            if not track_name:
+                raise Exception(f"Failed to get the track name from metadata: {url}")
+            
+            print(f"[Spotify redirect] Found: {track_artist} — {track_name} \n")
+
+            search_query = f"ytsearch: {track_artist} {track_name}"
+            downloadf_ytsc([search_query])
+
+    except Exception as e:
+        print(f"[ERR] Spotify redirection failed: {e}")
+
     
-    download_from_ytsc([search_query])
 
-
-test_urls = ['', #Soundcloud/Youtube URLs (Spotify untested)
-            '',  
+test_urls = ['https://soundcloud.com/user-328360239/dozhd-po-shchekam-remix?si=7b6891ff47ae4ed2a56489a81a4143ec&utm_source=clipboard&utm_medium=text&utm_campaign=social_sharing', #Soundcloud/Youtube URLs (Spotify untested)
+            'https://music.youtube.com/watch?v=XDzzKkLPRP4&si=HPc9zodp2_FMA-cZ',  
+            'https://music.youtube.com/watch?v=4f6RBIvP7D4&si=JydaJA-7cny7hzqX'
         ]
+
+test_spotify_urls = ['https://open.spotify.com/track/6qZra71fzsZOgmCPwzBKLt?si=JLya-piGToG0FdisQCxUwg',
+                    'https://open.spotify.com/track/2bqS0QtnXGjOYs3z6VtSyW?si=3TsuoVNsQXCycauyS3X5WQ'
+                    
+                    ]
 try:
-    download_from_ytsc(test_urls)
+    downloadf_ytsc(test_urls)
+    downloadf_sfy(test_spotify_urls)
 except Exception as e:
     print(f'[Error] details: {e}')
