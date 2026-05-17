@@ -36,10 +36,8 @@ A simple and lightweight backend module for downloading, converting, and tagging
     ```bash
     pip install -r requirements.txt
 3. **Add external binaries:**
-To enable conversion and downloads, ensure you have the required executables. Download and place them inside the `bin/` folder of your project:
-
-* [FFmpeg (ffmpeg.exe)](https://ffmpeg.org/download.html) — For audio conversion.
-* [Deno (deno.exe)](https://docs.deno.com/runtime/getting_started/installation/) — For bypassing YouTube limits.
+To enable conversion and downloads, you need `ffmpeg.exe` and `deno.exe`. 
+   Go to the **Releases** tab on the right side of this GitHub repository, download `bin.zip`, and extract the `bin/` folder directly into the root directory of this project.
 
 *These files are already included in the `bin` folder.*
 
