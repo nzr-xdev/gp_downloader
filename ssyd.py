@@ -18,13 +18,45 @@ if hasattr(spotify_scraper, 'client'):
     spotify_scraper.client.logging.basicConfig(level=logging.CRITICAL)
     logging.getLogger("spotify_scraper.client").setLevel(logging.CRITICAL)
 
-class GPError(Exception): pass
-class UnsupportedURLError(GPError): pass
-class MetadataError(GPError): pass
-class ProcessError(GPError): pass
+# ==========================================
+#            Advanced exceptions
+# ==========================================
 
+class GPError(Exception):
+    #Basic exception
 
-# YDL default settings
+    def __init__(self, msg:str, payload: dict = None):
+        super().__init__(msg)
+        self.message = msg
+        self.payload = payload or {}
+
+class UnsupportedURLError(GPError): 
+    #Unsupported url
+    pass
+class MetadataError(GPError):
+    # Spotify scraper tags error 
+    pass
+class ProcessError(GPError):
+    # FFmpeg convertation or downloading error
+    pass
+class LimitExceededError(GPError):
+    # Limits error
+    pass
+
+# ==========================================
+#           Dynamic settings
+# ==========================================
+
+config = {
+    "is_maintenance": False,
+    "max_duration_seconds": 900,
+    "banned_users": [],
+    "max_size_MiB": 100
+}
+
+# ==========================================
+#             yt_dlp options
+# ==========================================
 def download_result(d):
     if d['status'] == 'finished':
 
@@ -53,7 +85,9 @@ ydl_opts = {
         'external_downloader_args': {'youtube': ['--js-runtimes', 'deno:bin/deno.exe']}
     }
 
-# Media Manager (FFmpeg and Mutagen used)
+# ==========================================
+#    Media Manager (conversion, tagging)
+# ==========================================
 class TrackMediaManager:
     @staticmethod
     def convert(track_data: dict, folder_dist: str, out_format: str = 'MP3') -> str:
@@ -127,6 +161,9 @@ class TrackMediaManager:
             except Exception:
                 pass
 
+# ==========================================
+#           Main download process
+# ==========================================
 class  GPDownloader:
     def __init__(self, ydl_options:dict):
         self.ydl_opts = ydl_options
@@ -137,13 +174,12 @@ class  GPDownloader:
         with YoutubeDL(self.ydl_opts) as ydl:
             try:
                 data = ydl.extract_info(url, download=True)
-
+                
                 video_data = data['entries'][0] if 'entries' in data else data
                 if video_data.get('requested_downloads'):
                     file_path = video_data['requested_downloads'][0]['filepath']
                 else:
                     file_path = ydl.prepare_filename(video_data)
-                
                 thumbnails = video_data.get('thumbnails', [])
                 cover_url = thumbnails[-1]['url'] if thumbnails else None
 
@@ -158,7 +194,7 @@ class  GPDownloader:
 
                 return track_metadata
             except Exception as e:
-                raise ProcessError(f"Extractor failed: {e}")
+                raise ProcessError(f"Extractor failed, probably the link is broken")
 
     # Redirect Spotify downloads to YouTube
     def downloadf_sfy(self, url:str):
@@ -180,47 +216,29 @@ class  GPDownloader:
             raise MetadataError(f"Spotify extractor failed: {e}")
 
     # Automatically selects the download method and manages the main process
-    def process(self, mediatype:str, urls:list, folder_dist:str, dformat:str = 'MP3'):
-
+    def process(self, mediatype:str, urls:list, folder_dist:str, dformat:str = 'MP3', user_id: int = None):
+        
+        if config["is_maintenance"]:
+            raise LimitExceededError("Unavailable due to maintenance.")
+        if user_id in config['banned_users']:
+            raise LimitExceededError(f"Access denied for user {user_id}.")
+        
         if mediatype == 'tracks':
 
             print(f'[INFO] Starting for download track(s) \nTarget folder: {folder_dist}')
 
             for url in urls:
-                try:
-                    if "youtube.com" in url or "music.youtube.com" in url or "soundcloud.com" in url:
-                        track_data = self.downloadf_ytsc(url)
-                    elif "spotify.com" in url:
-                        track_data = self.downloadf_sfy(url)
-                    else:
-                        raise UnsupportedURLError(f"URL not supported: {url}")
+                if "youtube.com" in url or "music.youtube.com" in url or "soundcloud.com" in url:
+                    track_data = self.downloadf_ytsc(url)
+                elif "spotify.com" in url:
+                    track_data = self.downloadf_sfy(url)
+                else:
+                    raise UnsupportedURLError(f"URL not supported: {url}")
 
-                    if not track_data:
-                        continue
+                if not track_data:
+                    raise ProcessError("Failed to retrieve track data.")
 
-                    file = TrackMediaManager.convert(track_data, folder_dist, dformat)
-                    TrackMediaManager.apply_tags(file, track_data)
+                file = TrackMediaManager.convert(track_data, folder_dist, dformat)
+                TrackMediaManager.apply_tags(file, track_data)
 
-                    print(f"[Success] Saved to dist: {file}\n")
-
-                except GPError as e:
-                    print(f"[Expected WARN] {e}")
-                except Exception as e:
-                    print(f"[CRITICAL ERR] Crashed on {url}: {e}\n")
-
-
-
-
-
-
-test_urls = ['https://soundcloud.com/user-328360239/dozhd-po-shchekam-remix?si=7b6891ff47ae4ed2a56489a81a4143ec&utm_source=clipboard&utm_medium=text&utm_campaign=social_sharing', #Soundcloud/Youtube URLs (Spotify untested)
-            'https://music.youtube.com/watch?v=XDzzKkLPRP4&si=HPc9zodp2_FMA-cZ',  
-            'https://music.youtube.com/watch?v=4f6RBIvP7D4&si=JydaJA-7cny7hzqX',
-            'https://open.spotify.com/track/6qZra71fzsZOgmCPwzBKLt?si=JLya-piGToG0FdisQCxUwg',
-                    'https://open.spotify.com/track/2bqS0QtnXGjOYs3z6VtSyW?si=3TsuoVNsQXCycauyS3X5WQ'
-        ]
-
-
-destination = "W:/g-player_project/test"
-mainproc = GPDownloader(ydl_opts)
-mainproc.process('tracks', test_urls, destination)
+                print(f"[Success] Saved to dist: {file}\n")
