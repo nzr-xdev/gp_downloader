@@ -8,7 +8,8 @@ It also uses FFmpeg for audio conversion and Mutagen for managing ID3 tags.
 """
 
 from yt_dlp import YoutubeDL
-import os, requests, logging, subprocess
+from pathlib import Path
+import os, requests, logging, subprocess, re, sys
 from mutagen.id3 import ID3, TIT2, TPE1, TALB, APIC
 from spotify_scraper import SpotifyClient
 from PIL import Image
@@ -34,8 +35,12 @@ class UnsupportedURLError(GPError):
     #Unsupported url
     pass
 class MetadataError(GPError):
-    # Spotify scraper tags error 
+    # metadata broken
     pass
+class ErrorRetrievinginfo(GPError):
+    # error retrieving information
+    pass
+
 class ProcessError(GPError):
     # FFmpeg convertation or downloading error
     pass
@@ -43,16 +48,28 @@ class LimitExceededError(GPError):
     # Limits error
     pass
 
+class NoLinksInText(GPError):
+    # No links found after processing user text
+    pass
+
 # ==========================================
-#           Dynamic settings
+#       Some preparations for Win/Linux
 # ==========================================
 
-config = {
-    "is_maintenance": False,
-    "max_duration_seconds": 900,
-    "banned_users": [],
-    "max_size_MiB": 100
-}
+BASE_DIR = Path(__file__).resolve().parent
+if sys.platform.startswith('win'):
+    ffmpeg_name = 'ffmpeg.exe'
+else:
+    ffmpeg_name = 'ffmpeg'
+FFMPEG_BIN = str(BASE_DIR / 'bin' / ffmpeg_name)
+
+CACHE_DIR = BASE_DIR / ".cache"
+CACHE_DIR.mkdir(exist_ok=True)
+deno_name = 'deno.exe' if sys.platform.startswith('win') else 'deno'
+DENO_PATH = str(BASE_DIR / 'deno' / 'bin' / deno_name)
+
+OUTPUT_DIR = BASE_DIR / "output"
+OUTPUT_DIR.mkdir(exist_ok=True)
 
 # ==========================================
 #             yt_dlp options
@@ -72,18 +89,17 @@ def download_result(d):
         print(f"[DWNLD] {os.path.basename(path)} \n     {size_mib:.2f}MiB in {elapsed_time:.2f}s at {avg_speed:.2f}MiB/s \n")
 
 ydl_opts = {
-
-        'format': 'bestaudio/best',
-        'outtmpl': '.cache/%(title)s.%(ext)s',
-        'quiet': True,
-        'no_warnings': True,
-        'noprogress': True,
-        'playlist_items': '1',
-        'noplaylist': True,
-        'progress_hooks': [download_result],
-
-        'external_downloader_args': {'youtube': ['--js-runtimes', 'deno:bin/deno.exe']}
+    'format': 'bestaudio/best',
+    'outtmpl': str(CACHE_DIR / '%(title)s.%(ext)s'),
+    'quiet': True,
+    'no_warnings': True,
+    'noprogress': True,
+    'progress_hooks': [download_result],
+    
+    'external_downloader_args': {
+        'youtube': ['--js-runtimes', f'deno:{DENO_PATH}']
     }
+}
 
 # ==========================================
 #    Media Manager (conversion, tagging)
@@ -96,7 +112,11 @@ class TrackMediaManager:
         filename = os.path.basename(os.path.splitext(old_path)[0]) + f'.{out_format.lower()}'
         new_path = os.path.join(folder_dist, filename)
         
-        ffmpeg_bin = os.path.join('bin', 'ffmpeg.exe')
+        if sys.platform.startswith('win'):
+            ffmpeg_name = 'ffmpeg.exe'
+        else:
+            ffmpeg_name = 'ffmpeg'
+        ffmpeg_bin = str(BASE_DIR / 'bin' / ffmpeg_name)
         cmd = [ffmpeg_bin, '-y', '-i', old_path, '-vn']
         
         fmt = out_format.upper()
@@ -165,8 +185,8 @@ class TrackMediaManager:
 #           Main download process
 # ==========================================
 class  GPDownloader:
-    def __init__(self, ydl_options:dict):
-        self.ydl_opts = ydl_options
+    def __init__(self):
+        self.ydl_opts = ydl_opts
         self.spotify = SpotifyClient()
     
     # Download music from YT Music or SoundCloud
@@ -216,17 +236,19 @@ class  GPDownloader:
             raise MetadataError(f"Spotify extractor failed: {e}")
 
     # Automatically selects the download method and manages the main process
-    def process(self, mediatype:str, urls:list, folder_dist:str, dformat:str = 'MP3', user_id: int = None):
+    def process(self,platform:str, mediatype:str, url:str,  dformat:str = 'MP3'):
         
-        if config["is_maintenance"]:
-            raise LimitExceededError("Unavailable due to maintenance.")
-        if user_id in config['banned_users']:
-            raise LimitExceededError(f"Access denied for user {user_id}.")
+        if platform == 'Youtube':
+
+            if mediatype == 'playlist':
+                track_data = self.downloadf_ytsc(url)
+                file = TrackMediaManager.convert(track_data, OUTPUT_DIR, dformat)
+                TrackMediaManager.apply_tags(file, track_data)
+                return file
+            pass
         
-        if mediatype == 'tracks':
-
-            print(f'[INFO] Starting for download track(s) \nTarget folder: {folder_dist}')
-
+        urls=[]
+        if mediatype == 'track':
             for url in urls:
                 if "youtube.com" in url or "music.youtube.com" in url or "soundcloud.com" in url:
                     track_data = self.downloadf_ytsc(url)
@@ -238,7 +260,97 @@ class  GPDownloader:
                 if not track_data:
                     raise ProcessError("Failed to retrieve track data.")
 
-                file = TrackMediaManager.convert(track_data, folder_dist, dformat)
+                file = TrackMediaManager.convert(track_data, OUTPUT_DIR, dformat)
                 TrackMediaManager.apply_tags(file, track_data)
+                return file
+            
 
-                print(f"[Success] Saved to dist: {file}\n")
+
+# ==========================================
+#               URL Parser
+# ==========================================
+
+class URLParser:
+
+    def __init__(self):
+        self.ydl_opts = {
+
+            'extract_flat': True,
+            'skip_download': True,
+            'quiet': True,
+            'no_warnings': True,
+            'noprogress': True,
+            'playlist_items': '1-100',
+            'external_downloader_args': {'youtube': ['--js-runtimes', 'deno:bin/deno.exe']}
+
+        }
+        self.spotify = SpotifyClient()
+
+    @staticmethod
+    def get_links(raw_text:str) -> list[str]:
+        
+        url_patern = r'https?://[^\s]+'
+        return re.findall(url_patern, raw_text)
+
+    def get_info_perlink(self, url:str) -> dict:
+            try:
+                if "youtube.com" in url or "music.youtube.com" in url or "youtu.be" in url or "soundcloud.com" in url:
+                    platform = 'Soundcloud' if 'soundcloud.com' in url else 'Youtube'
+                    info = YoutubeDL(ydl_opts).extract_info(url, download=False, process=False)
+                    
+                    if 'sets' in url or 'playlist' in url:
+                        mediatype = 'playlist'
+                    else:
+                        mediatype = 'track'; return (platform, mediatype, 1)
+
+                    if info.get('_type') == 'playlist' or 'entries' in info:
+                        count = info.get('playlist_count') or len(info.get('entries', []))
+
+                    return (platform, mediatype, count)
+
+                elif "spotify.com" in url:
+                    platform = 'Spotify'
+                    if 'album' in url: 
+                        mediatype = 'album'
+                        album_info = self.spotify.get_album_info(url)
+                        count = int(album_info.get('total_tracks', 0))
+                        return (platform, mediatype, count)
+                    elif 'playlist' in url: 
+                        mediatype = 'playlist'
+                        playlist_info = self.spotify.get_playlist_info(url)
+                        count = int(playlist_info.get('track_count', 0))
+                        return (platform, mediatype, count)
+                    elif 'track' in url: mediatype = 'track'; return (platform, mediatype, 1)
+                    else: UnsupportedURLError(f"URL is uncorrest: {url}")
+
+
+
+                else:
+                    raise UnsupportedURLError(f"URL not supported: {url}")
+                
+
+            except Exception as e: ErrorRetrievinginfo(f'Failed to get data from server: {e}')
+        
+    def link_preparer(self, raw_text:str) -> dict:
+        total_count = 0
+        parsing_result = {}
+        links = self.get_links(raw_text)
+        if not links:
+            raise NoLinksInText('No links found in the request')
+        
+        for url in links:
+            platform, mediatype, count = self.get_info_perlink(url)
+            total_count+=count
+            parsing_result[str(url)] = (platform, mediatype)
+        
+        return (parsing_result, total_count)
+
+if __name__ == '__main__':
+
+    raw_text='12512522c46v24b6 https://soundcloud.com/sofiko-766770244/sets/platlist-sofikokos'
+    config = {'max_songs': 30}
+    proc = URLParser()
+    result, total_count = proc.link_preparer(raw_text)
+    if total_count > config['max_songs']:
+        print('Too much songs')
+    else: print(result)

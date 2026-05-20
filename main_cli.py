@@ -1,14 +1,13 @@
-from ssyd import GPDownloader, ydl_opts, config, GPError, UnsupportedURLError, MetadataError, ProcessError, LimitExceededError
+from ssyd import GPDownloader, GPError, UnsupportedURLError, MetadataError, ProcessError, LimitExceededError
 
-test_urls = ['yoursong1.link',
-              'yoursong2.link' ]
+test_urls = ['https://soundcloud.com/bucur-darius-162711084/nevermind-kvpv-bass-boosted?in=hczh-hzhh/sets/bibika/s-ptMqv99ke9J&si=7bb444a73e784e129c73190cc08a70cd&utm_source=clipboard&utm_medium=text&utm_campaign=social_sharing']
 
-destination = "C:/Music"
+destination = "W:/g-player_project/test"
 
 def run():
     try: 
-        mainproc = GPDownloader(ydl_opts)
-        mainproc.process('tracks', test_urls, destination, user_id=777)
+        mainproc = GPDownloader()
+        mainproc.process('tracks', test_urls, destination)
     
     except LimitExceededError as e:
         print(f"[MOD] Access denied: {e}")
