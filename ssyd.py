@@ -24,7 +24,7 @@ if hasattr(spotify_scraper, 'client'):
 # ==========================================
 
 class GPError(Exception):
-    #Basic exception
+    # Basic exception
 
     def __init__(self, msg:str, payload: dict = None):
         super().__init__(msg)
@@ -32,7 +32,7 @@ class GPError(Exception):
         self.payload = payload or {}
 
 class UnsupportedURLError(GPError): 
-    #Unsupported url
+    # Unsupported URL
     pass
 class MetadataError(GPError):
     # metadata broken
@@ -42,7 +42,7 @@ class ErrorRetrievinginfo(GPError):
     pass
 
 class ProcessError(GPError):
-    # FFmpeg convertation or downloading error
+    # FFmpeg conversion or downloading error
     pass
 class LimitExceededError(GPError):
     # Limits error
@@ -86,7 +86,7 @@ def download_result(d):
 
         path = d.get('filename', 'Unknown')
 
-        print(f"[DWNLD] {os.path.basename(path)} \n     {size_mib:.2f}MiB in {elapsed_time:.2f}s at {avg_speed:.2f}MiB/s \n")
+        logging.debug(f"[DWNLD] {os.path.basename(path)} \n     {size_mib:.2f}MiB in {elapsed_time:.2f}s at {avg_speed:.2f}MiB/s \n")
 
 ydl_opts = {
     'format': 'bestaudio/best',
@@ -111,13 +111,7 @@ class TrackMediaManager:
         old_path = track_data['path']
         filename = os.path.basename(os.path.splitext(old_path)[0]) + f'.{out_format.lower()}'
         new_path = os.path.join(folder_dist, filename)
-        
-        if sys.platform.startswith('win'):
-            ffmpeg_name = 'ffmpeg.exe'
-        else:
-            ffmpeg_name = 'ffmpeg'
-        ffmpeg_bin = str(BASE_DIR / 'bin' / ffmpeg_name)
-        cmd = [ffmpeg_bin, '-y', '-i', old_path, '-vn']
+        cmd = [FFMPEG_BIN, '-y', '-i', old_path, '-vn']
         
         fmt = out_format.upper()
         if fmt == 'MP3':
@@ -189,8 +183,8 @@ class  GPDownloader:
         self.ydl_opts = ydl_opts
         self.spotify = SpotifyClient()
     
-    # Download music from YT Music or SoundCloud
-    def downloadf_ytsc(self, url:str) -> dict:
+    # Download TRACK/PLAYLIST from YT Music or SoundCloud
+    def track_ytsc(self, url:str) -> dict:
         with YoutubeDL(self.ydl_opts) as ydl:
             try:
                 data = ydl.extract_info(url, download=True)
@@ -216,8 +210,33 @@ class  GPDownloader:
             except Exception as e:
                 raise ProcessError(f"Extractor failed, probably the link is broken")
 
-    # Redirect Spotify downloads to YouTube
-    def downloadf_sfy(self, url:str):
+    def playlist_ytsc(self, url:str) -> list[dict]:
+        with YoutubeDL(self.ydl_opts) as ydl:
+            try:
+                data = ydl.extract_info(url, download=True)
+                tracks = []
+                for entry in data.get('entries', []):
+                    if entry.get('requested_downloads'):
+                        file_path = entry['requested_downloads'][0]['filepath']
+                    else:
+                        file_path = ydl.prepare_filename(entry)
+                    thumbnails = entry.get('thumbnails', [])
+                    cover_url = thumbnails[-1]['url'] if thumbnails else None
+
+                    track_metadata = {
+                        'path': file_path,
+                        'title': entry.get('title', 'Unknown Title'),
+                        'artist': entry.get('creator') or entry.get('uploader', "Unknown Artist"),
+                        'album': data.get('title', 'Playlist'),
+                        'cover_url': cover_url
+                    }
+                    tracks.append(track_metadata)
+                return tracks
+            except Exception as e:
+                raise ProcessError(f"Extractor failed, probably the link is broken")
+
+    # Redirect Spotify TRACK/Playlist(Album) download(s) to YouTube
+    def track_spfy(self, url:str):
 
         try:
             track = self.spotify.get_track_info(url)
@@ -226,45 +245,89 @@ class  GPDownloader:
 
             if not track_name:
                 raise MetadataError(f"Failed to get the track name from metadata: {url}")
-                
-            print(f"[Spotify redirect] Found: {track_artist} — {track_name} \n")
 
             search_query = f"ytsearch: {track_artist} {track_name}"
-            return self.downloadf_ytsc(search_query)
+            return self.track_ytsc(search_query)
 
         except Exception as e:
             raise MetadataError(f"Spotify extractor failed: {e}")
 
+    def collection_spfy(self, url:str, mediatype:str):
+        
+        if mediatype == 'album':
+            data = self.spotify.get_album_info(url)
+            album_artists = data.get('artists', [])
+            global_artist = album_artists[0].get('name', 'Unknown Artist') if album_artists else 'Unknown Artist'
+        elif mediatype == 'playlist':
+            data = self.spotify.get_playlist_info(url)
+            global_artist = 'Various Artists'
+        else:
+            raise UnsupportedURLError(f"Unsupported Spotify media type: {mediatype}")
+        
+        tracks = data.get('tracks', [])
+        completed = []
+
+        for track in tracks:
+            track_name = track.get('name', 'Unknown Track')
+
+            if mediatype == 'album':
+                artist_name = global_artist
+            else:
+                track_artists = track.get('artists', [])
+                artist_name = track_artists[0].get('name', 'Unknown Artist') if track_artists else 'Unknown Artist'
+
+            search_query = f"ytsearch: {artist_name} {track_name}"
+
+            try:
+                track_metadata = self.track_ytsc(search_query)
+
+                if track_metadata and 'path' in track_metadata:
+
+                    track_metadata['title'] = track_name
+                    track_metadata['artist'] = artist_name
+                    track_metadata['album'] = data.get('name', 'Unknown Album')
+
+                    completed.append(track_metadata)
+            except Exception as e:
+                logging.warning(f"Failed to process track '{artist_name} - {track_name}': {e}")
+                continue
+
+        return completed
+
     # Automatically selects the download method and manages the main process
-    def process(self,platform:str, mediatype:str, url:str,  dformat:str = 'MP3'):
+    def process(self, url:str, platform:str, mediatype:str,  dformat:str = 'MP3'):
         
-        if platform == 'Youtube':
+        if platform == 'Youtube' or platform == 'Soundcloud':
 
-            if mediatype == 'playlist':
-                track_data = self.downloadf_ytsc(url)
-                file = TrackMediaManager.convert(track_data, OUTPUT_DIR, dformat)
-                TrackMediaManager.apply_tags(file, track_data)
-                return file
-            pass
-        
-        urls=[]
-        if mediatype == 'track':
-            for url in urls:
-                if "youtube.com" in url or "music.youtube.com" in url or "soundcloud.com" in url:
-                    track_data = self.downloadf_ytsc(url)
-                elif "spotify.com" in url:
-                    track_data = self.downloadf_sfy(url)
-                else:
-                    raise UnsupportedURLError(f"URL not supported: {url}")
+            if mediatype == 'track':
+                track_data = [self.track_ytsc(url)]
+            elif mediatype == 'playlist':
+                track_data = self.playlist_ytsc(url)
 
-                if not track_data:
-                    raise ProcessError("Failed to retrieve track data.")
-
-                file = TrackMediaManager.convert(track_data, OUTPUT_DIR, dformat)
-                TrackMediaManager.apply_tags(file, track_data)
-                return file
+            if not track_data:
+                raise ProcessError("Failed to retrieve track data.")
             
+            files = []
+            for track in track_data:
+                file = TrackMediaManager.convert(track, OUTPUT_DIR, dformat)
+                files.append(file)
+                TrackMediaManager.apply_tags(file, track)
+            return files
+        
+        elif platform == 'Spotify':
+            if mediatype == 'track':
+                track_data = [self.track_spfy(url)]
+            elif mediatype in ['album', 'playlist']:
+                track_data = self.collection_spfy(url, mediatype)
 
+            if not track_data:
+                raise ProcessError("Failed to retrieve track data.")
+            files = []
+            for track in track_data:
+                file = TrackMediaManager.convert(track, OUTPUT_DIR, dformat)
+                files.append(file)
+                TrackMediaManager.apply_tags(file, track)
+            return files
 
 # ==========================================
 #               URL Parser
@@ -321,15 +384,12 @@ class URLParser:
                         count = int(playlist_info.get('track_count', 0))
                         return (platform, mediatype, count)
                     elif 'track' in url: mediatype = 'track'; return (platform, mediatype, 1)
-                    else: UnsupportedURLError(f"URL is uncorrest: {url}")
-
-
-
+                    else: raise UnsupportedURLError(f"URL is uncorrect: {url}")
                 else:
                     raise UnsupportedURLError(f"URL not supported: {url}")
                 
 
-            except Exception as e: ErrorRetrievinginfo(f'Failed to get data from server: {e}')
+            except Exception as e: raise ErrorRetrievinginfo(f'Failed to get data from server: {e}')
         
     def link_preparer(self, raw_text:str) -> dict:
         total_count = 0
@@ -337,7 +397,6 @@ class URLParser:
         links = self.get_links(raw_text)
         if not links:
             raise NoLinksInText('No links found in the request')
-        
         for url in links:
             platform, mediatype, count = self.get_info_perlink(url)
             total_count+=count
@@ -347,10 +406,21 @@ class URLParser:
 
 if __name__ == '__main__':
 
-    raw_text='12512522c46v24b6 https://soundcloud.com/sofiko-766770244/sets/platlist-sofikokos'
+    # Just for testing purposes
+    raw_text='Check this out: https://soundcloud.com/anysong'
     config = {'max_songs': 30}
     proc = URLParser()
-    result, total_count = proc.link_preparer(raw_text)
-    if total_count > config['max_songs']:
-        print('Too much songs')
-    else: print(result)
+    proccess = GPDownloader()
+    try:
+        result, total_count = proc.link_preparer(raw_text)
+        if total_count > config['max_songs']:
+            print('Too much songs')
+        else: 
+            
+            for url, (platform, mediatype) in result.items():
+                output_files = proccess.process(url, platform, mediatype)
+                for file in output_files:
+                    print(f"Uploaded: {file}")
+                    #other logic for uploading to cloud or something
+    except Exception as e:
+        print(f"Error: {e}")
