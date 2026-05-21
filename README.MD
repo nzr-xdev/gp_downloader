@@ -36,18 +36,21 @@ A simple and lightweight backend module for downloading, converting, and tagging
     ```bash
     pip install -r requirements.txt
 3. **Add external binaries:**
-To enable conversion and downloads, you need `ffmpeg.exe` and `deno.exe`. 
+To enable conversion and downloads, you need `ffmpeg` and `deno`
    Go to the **Releases** tab on the right side of this GitHub repository, download `bin.zip`, and extract the `bin/` folder directly into the root directory of this project.
 
-*These files are already included in the `bin` folder.*
+*These files are already included in the binaries archive (`bin.zip`)*
 
-4. **Run the CLI test:**
+4. **Try it out:**
     ```bash
-    python main_cli.py
+    python ssyd.py
 
 ---
 
 ### 📂 File Structure
 
 * `ssyd.py` — The core engine containing downloading logic, media managers, and configurations.
-* `main_cli.py` — A simple console interface used to test the downloader with a list of links.
+* `bin/deno` —  runtime required by yt_dlp extractors to bypass restrictions.
+* `bin/ffmpeg` - *REQUIRED* Local binary used for fast audio decoding and conversion.
+* `output/` - Output directory for files generated after processing.
+* `.cache`- Cache directory for temporary files.
