@@ -1,0 +1,101 @@
+{
+    "en": {
+        "localization_change": "🌐 *Language configuration updated to English!*",
+        "welcome": "👋 *Welcome to MP3 MuzBot!* \n\nYour ultimate gateway to high-quality audio. Paste a link from *YouTube*, *SoundCloud*, or *Spotify* and let me handle the rest. Fast, clean, and completely seamless.",
+        "back": "⬅️ Back to main menu",
+        "main_menu": {
+            "button": "🎮 Open Menu",
+            "text": "🎯 *Main Dashboard* \n\nWhat are we downloading today? Choose an option below or simply drop a music link directly into the chat:",
+            "about": "🎵 Supported Platforms & Stack",
+            "help": "📖 Quick Start Guide",
+            "lang_settings": "🌐 Interface Language",
+            "feedback": "✍️ Support & Community"
+        },
+        "about": { 
+            "text": "⚡ *MP3 MuzBot* — a high-performance open-source media downloader.\n\n🟢 *Fully Supported Platforms:* \n• *YouTube* — Tracks, videos, and full playlists\n• *SoundCloud* — Individual releases and sets\n• *Spotify* — Track analytics, links, and albums\n\n| 💻 *Open Source Code:* This project is transparent and driven by the community. You can review the codebase, contribute, or star the repository directly on [GitHub](https://github.com/nzr-xdev/gp_downloader)!" 
+        },
+        "help": { 
+            "text": "📖 *How it works — 3 simple steps:* \n\n1️⃣ Open your favorite streaming app (Spotify, YouTube, or SoundCloud).\n2️⃣ Copy the link to a single track or an entire playlist.\n3️⃣ Paste it right here into the chat.\n\n⚡ *Tip:* The bot automatically parses the metadata, processes the audio stream, and delivers a clean MP3 file with proper tags." 
+        },
+        "lang_settings": { "text": "🌐 *Select your preferred interface language:* " },
+        "feedback": {
+            "text": "✍️ *Feedback & Technical Support*\n\nHave an issue, a feature request, or just want to support the developer? \n\n• Report bugs via [GitHub Issues](https://github.com/nzr-xdev/gp_downloader/issues)\n• For direct inquiries, feel free to submit feedback or check out the repository!"
+        },
+        "error_unknown_command": "❌ *Command unrecognized!* \n\nI didn't quite catch that. Please use the interactive dashboard below or send a valid streaming link.",
+        "error_too_many_songs": "❌ *Batch limit exceeded!* \n\nTo prevent server overload, you can download a maximum of *{max_songs}* tracks per individual request.",
+        "processing": "⏳ *Analyzing link...* Fetching metadata and preparing the audio stream. Please hold tight!",
+        "uploading": "🚀 *Uploading to Telegram:* \n\n📦 *File:* `{filename}`\n⚡ High-speed transfer in progress...",
+        "confirm_title": "⚠️ *Bulk Download Confirmation* \n\nYou are about to process a queue of *{count}* tracks. This might take a moment depending on the playlist size. Proceed?",
+        "confirm_yes": "✅ Let's do it!",
+        "confirm_no": "❌ Cancel request",
+        "success_text": "🎉 *Success!* All requested tracks have been successfully processed, tagged, and delivered. Enjoy your music!",
+        "error_msg": "💥 *An unexpected error occurred:*",
+        "download_cancelled": "❌ *Operation cancelled.* Stopping active queues and safely returning to the main menu..."
+    },
+    "uk": {
+        "localization_change": "🌐 *Мову інтерфейсу успішно змінено на українську!*",
+        "welcome": "👋 *Вітаємо в MP3 MuzBot!* \n\nТвій персональний інструмент для завантаження аудіо в максимальній якості. Просто кидай посилання з *YouTube*, *SoundCloud* або *Spotify* — усе інше я зроблю сам. Швидко, чисто та без зайвого клопоту.",
+        "back": "⬅️ Повернутися до меню",
+        "main_menu": {
+            "button": "🎮 Відкрити меню",
+            "text": "🎯 *Головна панель управління* \n\nЩо слухаємо сьогодні? Вибирай опцію в меню або просто надсилай посилання на трек прямо в чат:",
+            "about": "🎵 Підтримувані платформи & Стек",
+            "help": "📖 Інструкція користувача",
+            "lang_settings": "🌐 Мова інтерфейсу",
+            "feedback": "✍️ Підтримка та Фідбек"
+        },
+        "about": { 
+            "text": "⚡ *MP3 MuzBot* — високопродуктивний медіа-завантажувач із відкритим вихідним кодом.\n\n🟢 *Я без проблем підтримую:* \n• *YouTube* — Треки, відео та повні плейлісти\n• *SoundCloud* — Окремі сингли та готові сети\n• *Spotify* — Парсинг треків, альбомів та метаданих\n\n| 💻 *Open Source:* Проєкт є повністю відкритим. Ти можеш переглянути код, закинути свій пул-реквест або просто підтримати зірочкою наш репозиторій на [GitHub](https://github.com/nzr-xdev/gp_downloader)!"
+        },
+        "help": { 
+            "text": "📖 *Як користуватися — усе в 3 кроки:* \n\n1️⃣ Відкрий свій музичний додаток (Spotify, YouTube чи SoundCloud).\n2️⃣ Скопіюй посилання на улюблений трек або цілий плейліст.\n3️⃣ Надішли його сюди в чат у будь-який момент.\n\n⚡ *Фішка:* Бот сам витягне правильні теги, обкладинку та обробить аудіопотік у чистий MP3." 
+        },
+        "lang_settings": { "text": "🌐 *Будь ласка, виберіть бажану мову інтерфейсу:* " },
+        "feedback": {
+            "text": "✍️ *Зворотній зв'язок та техпідтримка*\n\nЗнайшов баг, є крута ідея для фічі чи хочеш подякувати за софт?\n\n• Створюй тікети через [GitHub Issues](https://github.com/nzr-xdev/gp_downloader/issues)\n• Заглядай у репозиторій, код відкритий для кожного!"
+        },
+        "error_unknown_command": "❌ *Невідома команда!*\n\nЯ тебе не зовсім зрозумів. Скористайся кнопками головного меню або просто відправ мені пряме посилання на музику.",
+        "error_too_many_songs": "❌ *Перевищено ліміт пакетної загрузки!* \n\nЩоб не покласти сервер, за один запит можна завантажувати не більше *{max_songs}* треків одночасно.",
+        "processing": "⏳ *Аналізую посилання...* Витягую метадані та готую аудіопотік до конвертації. Зачекай секунду!",
+        "uploading": "🚀 *Завантажую в Telegram:* \n\n📦 *Файл:* `{filename}`\n⚡ Надсилаю аудіо на високій швидкості...",
+        "confirm_title": "⚠️ *Підтвердження масового скачування* \n\nТы збираєшся зарядити чергу на *{count}* треків. Це може зайняти трохи часу залежно від розміру. Починаємо?",
+        "confirm_yes": "✅ Погнали!",
+        "confirm_no": "❌ Скасувати",
+        "success_text": "🎉 *Готово!* Всі треки успішно оброблені, упаковані в MP3 з тегами та надіслані. Приємного прослуховування!",
+        "error_msg": "💥 *Упс, виникла критична помилка:*",
+        "download_cancelled": "❌ *Процес перервано.* Активні завантаження скасовано, безпечно повертаємося в головне меню..."
+    },
+    "es": {
+        "localization_change": "🌐 *¡Idioma configurado en Español!*",
+        "welcome": "👋 *¡Bienvenido a MP3 MuzBot!* \n\nTu herramienta definitiva para descargar audio en máxima calidad. Pega un enlace de *YouTube*, *SoundCloud* o *Spotify* y déjame hacer el resto. Rápido, limpio y sin complicaciones.",
+        "back": "⬅️ Volver al menú principal",
+        "main_menu": {
+            "button": "🎮 Abrir Menú",
+            "text": "🎯 *Panel de Control Principal* \n\n¿Qué vamos a escuchar hoy? Elige una opción abajo o simplemente envía el enlace de la música directamente al chat:",
+            "about": "🎵 Plataformas Soportadas & Stack",
+            "help": "📖 Guía de Inicio Rápido",
+            "lang_settings": "🌐 Idioma de la Interfaz",
+            "feedback": "✍️ Soporte & Comunidad"
+        },
+        "about": { 
+            "text": "⚡ *MP3 MuzBot* — un descargador de medios de alto rendimiento y código abierto.\n\n🟢 *Plataformas Totalmente Soportadas:* \n• *YouTube* — Canciones, videos y playlists completas\n• *SoundCloud* — Pistas individuales y sets\n• *Spotify* — Análisis de pistas, álbumes y metadatos\n\n| 💻 *Código Abierto:* Este proyecto es transparente y mantenido por la comunidad. ¡Puedes revisar el código, contribuir o dejar una estrella en el repositorio directamente en [GitHub](https://github.com/nzr-xdev/gp_downloader)!" 
+        },
+        "help": { 
+            "text": "📖 *Cómo funciona — En solo 3 pasos:* \n\n1️⃣ Abre tu aplicación de música favorita (Spotify, YouTube o SoundCloud).\n2️⃣ Copia el enlace de una canción o de una playlist completa.\n3️⃣ Pégalo aquí mismo en el chat.\n\n⚡ *Tip:* El bot extrae automáticamente las etiquetas correctas, la portada y procesa el flujo de audio para entregarte un archivo MP3 limpio." 
+        },
+        "lang_settings": { "text": "🌐 *Por favor, selecciona tu idioma de interfaz preferido:* " },
+        "feedback": {
+            "text": "✍️ *Soporte Técnico & Feedback*\n\n¿Encontraste un error, tienes una idea para una función o quieres agradecer por el software? \n\n• Reporta fallos a través de [GitHub Issues](https://github.com/nzr-xdev/gp_downloader/issues)\n• ¡Echa un vistazo al repositorio, el código está abierto para todos!"
+        },
+        "error_unknown_command": "❌ *¡Comando no reconocido!*\n\nNo te entendí muy bien. Por favor, usa los botones del menú de abajo o envía un enlace de música válido.",
+        "error_too_many_songs": "❌ *¡Límite de descarga masiva excedido!* \n\nPara no saturar el servidor, puedes descargar un máximo de *{max_songs}* canciones por solicitud.",
+        "processing": "⏳ *Analizando enlace...* Obteniendo metadatos y preparando el flujo de audio para la conversión. ¡Espera un segundo!",
+        "uploading": "🚀 *Subiendo a Telegram:* \n\n📦 *Archivo:* `{filename}`\n⚡ Enviando audio a alta velocidad...",
+        "confirm_title": "⚠️ *Confirmación de Descarga Masiva* \n\nEstás a punto de procesar una cola de *{count}* canciones. Esto puede tomar un momento dependiendo del tamaño. ¿Continuamos?",
+        "confirm_yes": "✅ ¡Dale, vamos!",
+        "confirm_no": "❌ Cancelar",
+        "success_text": "🎉 *¡Listo!* Todas las canciones fueron procesadas, empaquetadas en MP3 con sus etiquetas y enviadas. ¡Disfruta de tu música!",
+        "error_msg": "💥 *Ups, ocurrió un error crítico:*",
+        "download_cancelled": "❌ *Proceso cancelado.* Deteniendo las descargas activas y regresando de forma segura al menú principal..."
+    }
+}

@@ -3,7 +3,6 @@ __pycache__/
 .venv/
 .vscode/
 .cache/
-test/
-bin/
-bin.rar
 output/
+.env
+bin/
