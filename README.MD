@@ -14,7 +14,6 @@ Live Demo: [@gpMP3muz_bot](https://t.me/gpMP3muz_bot) *[OFFLINE]*
 ![Build Status](https://img.shields.io/badge/build-passing-brightgreen?style=flat-square)
 ![Forks](https://img.shields.io/github/forks/nzr-xdev/gp_downloader?style=flat-square)
 ![Stars](https://img.shields.io/github/stars/nzr-xdev/gp_downloader?style=flat-square)
-![Views](https://hits.seeyoufarm.com/api/count/incr/badge.svg?url=https%3A%2F%2Fgithub.com%2Fnzr-xdev%2Fgp_downloader&count_bg=%2379C0FF&title_bg=%23555555&icon=&icon_color=%23E6edf3&title=views&edge_flat=false)
 
 ## 🐛 Bug Reporting & Feedback
 
@@ -28,7 +27,7 @@ If you encounter any issues, bugs, or limitations while running the bot, feel fr
 
 | Main Menu | Download Confirmation | Metadata & Cover Art inside Telegram |
 |:---:|:---:|:---:|
-| ![menu](readme_img/cover1.png) | `![confirm](readme_img/cover2.png)| `![output](readme_img/cover3.png) |
+| ![menu](readme_img/cover1.png) | ![confirm](readme_img/cover2.png)| ![output](readme_img/cover3.png) |
 
 ---
 
@@ -90,7 +89,7 @@ Handles link validation, extraction, and platform sorting.
 from core.ssyd import URLParser
 
 parser = URLParser()
-result, total_count = parser.link_preparer("Check this out: [https://soundcloud.com/track-link](https://soundcloud.com/track-link)")
+result, total_count = parser.link_preparer("Check this out: https://soundcloud.com/track-link")
 # result -> dict: { url: (platform, mediatype) }
 # total_count -> int: total number of tracks found
 
