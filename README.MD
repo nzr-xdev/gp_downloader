@@ -27,7 +27,7 @@ If you encounter any issues, bugs, or limitations while running the bot, feel fr
 
 | Main Menu | Download Confirmation | Metadata & Cover Art inside Telegram |
 |:---:|:---:|:---:|
-| ![menu](readme_img/cover1.png) | `![confirm](readme_img/cover2.png)| `![output](readme_img/cover3.png) |
+| ![menu](readme_img/cover1.png) | ![confirm](readme_img/cover2.png)| ![output](readme_img/cover3.png) |
 
 ---
 
