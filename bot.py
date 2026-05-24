@@ -2,6 +2,7 @@ import asyncio, logging
 from aiogram import Bot, Dispatcher
 from aiogram.client.default import DefaultBotProperties
 import config
+from database.db_handler import db
 from handlers.start import router as start_router
 from handlers.download import router as download_router
 #from handlers.admin import router as admin_router
@@ -24,6 +25,9 @@ logging.getLogger("httpx").setLevel(logging.WARNING)
 async def main():
     bot = Bot(token=config.BOT_TOKEN, default=DefaultBotProperties(parse_mode="HTML"))
     dp = Dispatcher()
+
+    await db.init_db()
+    print("[DB] Database initialized successfully.")
 
     #dp.include_router(admin_router)
     dp.include_router(start_router)

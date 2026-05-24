@@ -6,6 +6,7 @@ from aiogram.fsm.state import StatesGroup, State
 from aiogram.types import Message, CallbackQuery, InlineKeyboardMarkup, InlineKeyboardButton, FSInputFile
 from aiogram.filters import Command
 from aiogram.utils.keyboard import InlineKeyboardBuilder
+from database.db_handler import db
 
 router = Router()
 
@@ -47,6 +48,7 @@ def get_language_selection_keyboard(lang: str):
 
 @router.message(Command("start"))
 async def start_command(message: Message):
+    await db.register_user(message.from_user.id)
     user_lang = message.from_user.language_code
     default_language = user_lang if user_lang in LOCALIZATION else "en"
     preview_file = FSInputFile(path=PREVIEW_PATH)

@@ -1,3 +1,26 @@
 {
-    "max_songs_per_request": 30
+    "maintenance_mode": false,
+    "module_Youtube": true,
+    "module_Spotify": true,
+    "module_Soundcloud": true,
+    "plans": {
+        "user": {
+            "max_songs_per_request": 5,
+            "max_songs_per_day": 30,
+            "max_length_per_song": 10,
+            "max_timeout_per_request": 180
+        },
+        "premium": {
+            "max_songs_per_request": 20,
+            "max_songs_per_day": 100,
+            "max_length_per_song": 30,
+            "max_timeout_per_request": 300
+        },
+        "unlimited": {
+            "max_songs_per_request": 100,
+            "max_songs_per_day": 9999,
+            "max_length_per_song": 180,
+            "max_timeout_per_request": 600
+        }
+    }
 }

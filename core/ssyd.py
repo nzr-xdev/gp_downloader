@@ -5,6 +5,8 @@ if a Spotify link is provided, it redirects the download to YT Music after retri
 It also uses FFmpeg for audio conversion and Mutagen for managing ID3 tags.
 """
 
+from asyncio import threads
+
 from yt_dlp import YoutubeDL
 from pathlib import Path
 import os, requests, logging, subprocess, re, sys
@@ -150,12 +152,15 @@ class GPDownloader:
         self.ydl_opts = ydl_opts
         self.spotify = SpotifyClient()
     
-    def track_ytsc(self, url:str) -> dict:
+    def track_ytsc(self, url:str, max_len_seconds:int=600) -> dict:
         with YoutubeDL(self.ydl_opts) as ydl:
             try:
                 data = ydl.extract_info(url, download=True)
                 video_data = data['entries'][0] if 'entries' in data else data
                 
+                if video_data.get('duration', 0) > max_len_seconds:
+                    raise LimitExceededError("Track too long")
+
                 if video_data.get('requested_downloads'):
                     file_path = video_data['requested_downloads'][0]['filepath']
                 else:
@@ -174,13 +179,15 @@ class GPDownloader:
             except Exception:
                 raise ProcessError(f"Extractor failed, probably the link is broken")
 
-    def playlist_ytsc(self, url:str) -> list[dict]:
+    def playlist_ytsc(self, url:str, max_len_seconds:int=600) -> list[dict]:
         with YoutubeDL(self.ydl_opts) as ydl:
             try:
                 data = ydl.extract_info(url, download=True)
                 tracks = []
                 for entry in data.get('entries', []):
                     if not entry: continue
+                    if entry.get('duration', 0) > max_len_seconds:
+                        raise LimitExceededError("Track too long")
                     if entry.get('requested_downloads'):
                         file_path = entry['requested_downloads'][0]['filepath']
                     else:
@@ -200,18 +207,18 @@ class GPDownloader:
             except Exception:
                 raise ProcessError(f"Extractor failed, probably the link is broken")
 
-    def track_spfy(self, url:str):
+    def track_spfy(self, url:str, max_len_seconds:int=600):
         try:
             track = self.spotify.get_track_info(url)
             track_name = track.get('name')
             track_artist = track['artists'][0]['name'] if track.get('artists') else 'Unknown Artist'
             if not track_name:
                 raise MetadataError(f"Failed to get track name from Spotify: {url}")
-            return self.track_ytsc(f"ytsearch: {track_artist} {track_name}")
+            return self.track_ytsc(f"ytsearch: {track_artist} {track_name}", max_len_seconds)
         except Exception as e:
             raise MetadataError(f"Spotify extractor failed: {e}")
 
-    def collection_spfy(self, url:str, mediatype:str):
+    def collection_spfy(self, url:str, mediatype:str, max_len_seconds:int=600) -> list[dict]:
         if mediatype == 'album':
             data = self.spotify.get_album_info(url)
             album_artists = data.get('artists', [])
@@ -225,12 +232,11 @@ class GPDownloader:
         tracks = data.get('tracks', [])
         completed = []
 
-        # Worker for parallel processing of Spotify tracks
         def process_spotify_track(track):
             track_name = track.get('name', 'Unknown Track')
             artist_name = global_artist if mediatype == 'album' else (track.get('artists', [{}])[0].get('name', 'Unknown Artist'))
             try:
-                metadata = self.track_ytsc(f"ytsearch: {artist_name} {track_name}")
+                metadata = self.track_ytsc(f"ytsearch: {artist_name} {track_name}", max_len_seconds)
                 if metadata and 'path' in metadata:
                     metadata['title'] = track_name
                     metadata['artist'] = artist_name
@@ -240,7 +246,6 @@ class GPDownloader:
                 logging.warning(f"Failed to process Spotify track '{artist_name} - {track_name}': {e}")
             return None
 
-        # SPEED UP: Processing Spotify collection in 4 concurrent threads
         with ThreadPoolExecutor(max_workers=4) as executor:
             results = executor.map(process_spotify_track, tracks)
             for res in results:
@@ -248,17 +253,17 @@ class GPDownloader:
 
         return completed
 
-    def process(self, url:str, platform:str, mediatype:str, dformat:str = 'MP3'):
+    def process(self, url:str, platform:str, mediatype:str, max_len_seconds=600, dformat:str = 'MP3'):
         if platform in ['Youtube', 'Soundcloud']:
             if mediatype == 'track':
-                track_data = [self.track_ytsc(url)]
+                track_data = [self.track_ytsc(url, max_len_seconds)]
             elif mediatype == 'playlist':
-                track_data = self.playlist_ytsc(url)
+                track_data = self.playlist_ytsc(url, max_len_seconds)
         elif platform == 'Spotify':
             if mediatype == 'track':
-                track_data = [self.track_spfy(url)]
+                track_data = [self.track_spfy(url, max_len_seconds)]
             elif mediatype in ['album', 'playlist']:
-                track_data = self.collection_spfy(url, mediatype)
+                track_data = self.collection_spfy(url, mediatype, max_len_seconds)
         else:
             raise UnsupportedURLError(f"Unknown platform: {platform}")
 

@@ -7,9 +7,10 @@
             "button": "🎮 Open Menu",
             "text": "🎯 *Main Dashboard* \n\nWhat are we downloading today? Choose an option below or simply drop a music link directly into the chat:",
             "about": "🎵 Supported Platforms & Stack",
+            "plan": "💳 My Plan / Limits",
             "help": "📖 Quick Start Guide",
             "lang_settings": "🌐 Interface Language",
-            "feedback": "✍️ Support & Community"
+            "feedback": "💬 Support & Community"
         },
         "about": { 
             "text": "⚡ *MP3 MuzBot* — a high-performance open-source media downloader.\n\n🟢 *Fully Supported Platforms:* \n• *YouTube* — Tracks, videos, and full playlists\n• *SoundCloud* — Individual releases and sets\n• *Spotify* — Track analytics, links, and albums\n\n| 💻 *Open Source Code:* This project is transparent and driven by the community. You can review the codebase, contribute, or star the repository directly on [GitHub](https://github.com/nzr-xdev/gp_downloader)!" 
@@ -30,7 +31,22 @@
         "confirm_no": "❌ Cancel request",
         "success_text": "🎉 *Success!* All requested tracks have been successfully processed, tagged, and delivered. Enjoy your music!",
         "error_msg": "💥 *An unexpected error occurred:*",
-        "download_cancelled": "❌ *Operation cancelled.* Stopping active queues and safely returning to the main menu..."
+        "download_cancelled": "❌ *Operation cancelled.* Stopping active queues and safely returning to the main menu...",
+
+        "error_maintenance": "⚠️ The bot is currently undergoing technical maintenance. Please try again later.",
+        "error_platform_disabled_single": "❌ Sorry, downloading from {platform} is currently disabled by the administrator.",
+        "error_platform_disabled_bulk": "⚠️ Note: {platform} download is temporarily disabled. Disabled tracks will be skipped.",
+        "error_daily_limit_exceeded": "❌ You have reached your daily download limit ({max_day} songs).",
+        "error_packet_exceeds_daily": "❌ This batch exceeds your remaining daily limit. Remaining: {remains}.",
+        "error_timeout": "⏱️ Processing took too long and was timed out.",
+        "error_too_long": "❌ The track exceeds the maximum allowed duration of {max_len} minutes.",
+
+        "plan_info": {
+            "status_user": "FREE (Regular)",
+            "status_premium": "PREMIUM ⭐",
+            "status_unlimited": "UNLIMITED 🔥",
+            "text_template": "*📊 Your Tariff Plan*\n\n🔹 **Status:** {status}\n🔹 **Downloaded today:** `{current}/{max_daily}` tracks\n🔹 **Max tracks per request:** `{max_req}`\n🔹 **Max duration per track:** up to `{max_len}` min.\n\n🔄 _Limits will reset in: {time_left}_"
+        }
     },
     "uk": {
         "localization_change": "🌐 *Мову інтерфейсу успішно змінено на українську!*",
@@ -42,7 +58,7 @@
             "about": "🎵 Підтримувані платформи & Стек",
             "help": "📖 Інструкція користувача",
             "lang_settings": "🌐 Мова інтерфейсу",
-            "feedback": "✍️ Підтримка та Фідбек"
+            "feedback": "💬 Підтримка та Фідбек"
         },
         "about": { 
             "text": "⚡ *MP3 MuzBot* — високопродуктивний медіа-завантажувач із відкритим вихідним кодом.\n\n🟢 *Я без проблем підтримую:* \n• *YouTube* — Треки, відео та повні плейлісти\n• *SoundCloud* — Окремі сингли та готові сети\n• *Spotify* — Парсинг треків, альбомів та метаданих\n\n| 💻 *Open Source:* Проєкт є повністю відкритим. Ти можеш переглянути код, закинути свій пул-реквест або просто підтримати зірочкою наш репозиторій на [GitHub](https://github.com/nzr-xdev/gp_downloader)!"
@@ -85,7 +101,7 @@
         },
         "lang_settings": { "text": "🌐 *Por favor, selecciona tu idioma de interfaz preferido:* " },
         "feedback": {
-            "text": "✍️ *Soporte Técnico & Feedback*\n\n¿Encontraste un error, tienes una idea para una función o quieres agradecer por el software? \n\n• Reporta fallos a través de [GitHub Issues](https://github.com/nzr-xdev/gp_downloader/issues)\n• ¡Echa un vistazo al repositorio, el código está abierto para todos!"
+            "text": "💬 *Soporte Técnico & Feedback*\n\n¿Encontraste un error, tienes una idea para una función o quieres agradecer por el software? \n\n• Reporta fallos a través de [GitHub Issues](https://github.com/nzr-xdev/gp_downloader/issues)\n• ¡Echa un vistazo al repositorio, el código está abierto para todos!"
         },
         "error_unknown_command": "❌ *¡Comando no reconocido!*\n\nNo te entendí muy bien. Por favor, usa los botones del menú de abajo o envía un enlace de música válido.",
         "error_too_many_songs": "❌ *¡Límite de descarga masiva excedido!* \n\nPara no saturar el servidor, puedes descargar un máximo de *{max_songs}* canciones por solicitud.",
