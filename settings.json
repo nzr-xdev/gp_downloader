@@ -5,8 +5,8 @@
     "module_Soundcloud": true,
     "plans": {
         "user": {
-            "max_songs_per_request": 5,
-            "max_songs_per_day": 30,
+            "max_songs_per_request": 10, 
+            "max_songs_per_day": 30, 
             "max_length_per_song": 10,
             "max_timeout_per_request": 180
         },

@@ -7,6 +7,8 @@ from aiogram.types import Message, CallbackQuery, InlineKeyboardMarkup, InlineKe
 from aiogram.filters import Command
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 from database.db_handler import db
+from datetime import datetime, timedelta
+import config
 
 router = Router()
 
@@ -25,6 +27,7 @@ def get_main_menu_keyboard(lang: str):
     keyboard = [
         [InlineKeyboardButton(text=lang_text["about"], callback_data=f"about_{lang}")],
         [InlineKeyboardButton(text=lang_text["help"], callback_data=f"help_{lang}")],
+        [InlineKeyboardButton(text=lang_text["plan"], callback_data=f"plan_{lang}")],
         [InlineKeyboardButton(text=lang_text["lang_settings"], callback_data=f"lang_settings_{lang}")],
         [InlineKeyboardButton(text=lang_text["feedback"], callback_data=f"feedback_{lang}")]
     ]
@@ -117,7 +120,45 @@ async def feedback_callback(callback: CallbackQuery):
     )
     await callback.answer()
 
+@router.callback_query(F.data.startswith("plan_"))
+async def plan_callback(callback: CallbackQuery):
+    lang = callback.data.split("_")[-1]
+    user_id = callback.from_user.id
+    
+    user_data = await db.get_user(user_id)
+    if not user_data:
+        await callback.answer("Failed to retrieve user data", show_alert=True)
+        return
+        
+    user_status = user_data.get("status", "user")
+    current_daily = user_data.get("daily_downloads", 0)
+    
+    plan_limits = config.get_plan_limits(user_status)    
+    max_daily = plan_limits.get("max_songs_per_day", 30)
+    max_req = plan_limits.get("max_songs_per_request", 5)
+    max_len = plan_limits.get("max_length_per_song", 10)
+    
+    now = datetime.now()
+    tomorrow = datetime.combine(now.date() + timedelta(days=1), datetime.min.time())
+    time_left = tomorrow - now
+    
+    hours, remainder = divmod(int(time_left.total_seconds()), 3600)
+    minutes, _ = divmod(remainder, 60)
+    time_left_str = f"{hours}h {minutes}m"
+    
+    status_localized = LOCALIZATION[lang]["plan_info"].get(f"status_{user_status}", user_status.upper())
+    
+    text = LOCALIZATION[lang]["plan_info"]["text_template"].format(
+        status=status_localized,
+        current=current_daily,
+        max_daily=max_daily,
+        max_req=max_req,
+        max_len=max_len,
+        time_left=time_left_str
+    )
 
+    await callback.message.edit_text(text, reply_markup=get_back_keyboard(lang), parse_mode="Markdown")
+    await callback.answer()
 
 
 

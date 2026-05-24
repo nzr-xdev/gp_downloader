@@ -16,12 +16,11 @@ router = Router()
 parser = URLParser()
 downloader = GPDownloader()
 
-async def start_actual_download(message: Message, download_data: dict, lang: str, user_status: str):
+async def start_actual_download(message: Message, download_data: dict, lang: str, user_status: str, user_id: int):
     status_msg = await message.answer(text=LOCALIZATION[lang]["processing"], parse_mode="Markdown")
     limits = config.get_plan_limits(user_status)
     max_timeout = limits.get("max_timeout_per_request", 180)
     max_length = limits.get("max_length_per_song", 10)
-    user_id = message.chat.id if message.from_user is None else message.from_user.id
     
     try:
         for url, (platform, mediatype) in download_data.items():
@@ -152,7 +151,7 @@ async def handle_download(message: Message, state: FSMContext):
         await message.answer(LOCALIZATION[lang]["confirm_title"].format(count=total_count), reply_markup=keyboard, parse_mode="Markdown")
         return
 
-    await start_actual_download(message, result, lang, user_status)
+    await start_actual_download(message, result, lang, user_status, user_id)
             
 @router.callback_query(DownloadStates.confirm_download, F.data == "confirm_dl_no")
 async def cancel_download_callback(callback: CallbackQuery, state: FSMContext):
@@ -175,4 +174,4 @@ async def accept_download_callback(callback: CallbackQuery, state: FSMContext):
     
     await callback.answer()
     await callback.message.delete()
-    await start_actual_download(callback.message, result, lang, user_status)
+    await start_actual_download(callback.message, result, lang, user_status, callback.from_user.id)

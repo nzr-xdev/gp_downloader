@@ -154,13 +154,21 @@ class GPDownloader:
     
     def track_ytsc(self, url:str, max_len_seconds:int=600) -> dict:
         with YoutubeDL(self.ydl_opts) as ydl:
+        
+            try:
+                info = ydl.extract_info(url, download=False)
+            except Exception as e:
+                raise ProcessError(f"Extractor failed to fetch metadata: {e}")
+
+            video_data = info['entries'][0] if 'entries' in info else info
+            
+            if video_data.get('duration', 0) > max_len_seconds:
+                raise LimitExceededError("Track too long")
+
             try:
                 data = ydl.extract_info(url, download=True)
                 video_data = data['entries'][0] if 'entries' in data else data
                 
-                if video_data.get('duration', 0) > max_len_seconds:
-                    raise LimitExceededError("Track too long")
-
                 if video_data.get('requested_downloads'):
                     file_path = video_data['requested_downloads'][0]['filepath']
                 else:
@@ -176,18 +184,24 @@ class GPDownloader:
                     'album': video_data.get('album', 'Single'),
                     'cover_url': cover_url
                 }
-            except Exception:
-                raise ProcessError(f"Extractor failed, probably the link is broken")
+            except Exception as e:
+                raise ProcessError(f"Download failed after validation: {e}")
 
     def playlist_ytsc(self, url:str, max_len_seconds:int=600) -> list[dict]:
         with YoutubeDL(self.ydl_opts) as ydl:
+            try:
+                info = ydl.extract_info(url, download=False)
+            except Exception as e:
+                raise ProcessError(f"Extractor failed to fetch playlist metadata: {e}")
+            for entry in info.get('entries', []):
+                if not entry: continue
+                if entry.get('duration', 0) > max_len_seconds:
+                    raise LimitExceededError("Track in playlist too long")
             try:
                 data = ydl.extract_info(url, download=True)
                 tracks = []
                 for entry in data.get('entries', []):
                     if not entry: continue
-                    if entry.get('duration', 0) > max_len_seconds:
-                        raise LimitExceededError("Track too long")
                     if entry.get('requested_downloads'):
                         file_path = entry['requested_downloads'][0]['filepath']
                     else:
@@ -204,8 +218,8 @@ class GPDownloader:
                         'cover_url': cover_url
                     })
                 return tracks
-            except Exception:
-                raise ProcessError(f"Extractor failed, probably the link is broken")
+            except Exception as e:
+                raise ProcessError(f"Playlist download failed: {e}")
 
     def track_spfy(self, url:str, max_len_seconds:int=600):
         try:
@@ -288,14 +302,23 @@ class URLParser:
     def get_links(raw_text:str) -> list[str]:
         return re.findall(r'https?://[^\s]+', raw_text)
 
-    def get_info_perlink(self, url:str) -> dict:
+    def get_info_perlink(self, url:str) -> tuple:
         try:
             if any(domain in url for domain in ["youtube.com", "music.youtube.com", "youtu.be", "soundcloud.com"]):
                 platform = 'Soundcloud' if 'soundcloud.com' in url else 'Youtube'
                 mediatype = 'playlist' if ('sets' in url or 'playlist' in url) else 'track'
-                return (platform, mediatype, 1)
+                
+                count = 1
+                if mediatype == 'playlist':
+                    opts = {'extract_flat': True, 'quiet': True, 'no_warnings': True}
+                    with YoutubeDL(opts) as ydl:
+                        info = ydl.extract_info(url, download=False)
+                        if 'entries' in info:
+                            count = len(list(info['entries']))
+                            
+                return (platform, mediatype, count)
 
-            elif "spotify.com" in url or "spotify.com" in url:
+            elif "spotify.com" in url:
                 platform = 'Spotify'
                 if 'album' in url: 
                     return (platform, 'album', int(self.spotify.get_album_info(url).get('total_tracks', 1)))

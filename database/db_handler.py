@@ -54,8 +54,8 @@ class DatabaseManager:
                 is_reset_needed = old_last_active[:10] != now_str[:10]
                 
                 # TEST
-                # old_dt = datetime.strptime(old_last_active, "%Y-%m-%d %H:%M:%S")
-                # is_reset_needed = (now_dt - old_dt).total_seconds() >= 60
+                #old_dt = datetime.strptime(old_last_active, "%Y-%m-%d %H:%M:%S")
+                #is_reset_needed = (now_dt - old_dt).total_seconds() >= 60
                 
                 if is_reset_needed:
                     old_daily = 0 
