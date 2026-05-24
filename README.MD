@@ -14,7 +14,6 @@ Live Demo: [@gpMP3muz_bot](https://t.me/gpMP3muz_bot) *[OFFLINE]*
 ![Build Status](https://img.shields.io/badge/build-passing-brightgreen?style=flat-square)
 ![Forks](https://img.shields.io/github/forks/nzr-xdev/gp_downloader?style=flat-square)
 ![Stars](https://img.shields.io/github/stars/nzr-xdev/gp_downloader?style=flat-square)
-![Views](https://hits.seeyoufarm.com/api/count/incr/badge.svg?url=https%3A%2F%2Fgithub.com%2Fnzr-xdev%2Fgp_downloader&count_bg=%2379C0FF&title_bg=%23555555&icon=&icon_color=%23E6edf3&title=views&edge_flat=false)
 
 ## 🐛 Bug Reporting & Feedback
 
