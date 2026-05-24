@@ -40,6 +40,7 @@
         "error_packet_exceeds_daily": "❌ This batch exceeds your remaining daily limit. Remaining: {remains}.",
         "error_timeout": "⏱️ Processing took too long and was timed out.",
         "error_too_long": "❌ The track exceeds the maximum allowed duration of {max_len} minutes.",
+        "in_progress": "⏳ Your download is currently being processed. Please wait until it finishes before sending another link.",
 
         "plan_info": {
             "status_user": "FREE (Regular)",
@@ -89,6 +90,7 @@
         "error_packet_exceeds_daily": "❌ Ця черга перевищує ваш залишок добового ліміту. Залишилось: {remains}.",
         "error_timeout": "⏱️ Обробка зайняла занадто багато часу, час очікування вичерпано.",
         "error_too_long": "❌ Тривалість треку перевищує максимально дозволений ліміт у {max_len} хвилин.",
+        "in_progress": "⏳ Ваше завантаження зараз обробляється. Будь ласка, зачекайте його завершення, перш ніж надсилати ще одне посилання.",
 
         "plan_info": {
             "status_user": "FREE (Звичайний)",
@@ -138,6 +140,7 @@
         "error_packet_exceeds_daily": "❌ Esta tanda supera tu límite diario restante. Restante: {remains}.",
         "error_timeout": "⏱️ El procesamiento tomó demasiado tiempo y la solicitud expiró.",
         "error_too_long": "❌ La pista excede la duración máxima permitida de {max_len} minutos.",
+        "in_progress": "⏳ Tu descarga se está procesando. Por favor, espera a que finalice antes de enviarte otro enlace.",
 
         "plan_info": {
             "status_user": "FREE (Regular)",

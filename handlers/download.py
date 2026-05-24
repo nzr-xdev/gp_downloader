@@ -11,12 +11,13 @@ from database.db_handler import db
 
 class DownloadStates(StatesGroup):
     confirm_download = State()
+    processing_download = State()
 
 router = Router()
 parser = URLParser()
 downloader = GPDownloader()
 
-async def start_actual_download(message: Message, download_data: dict, lang: str, user_status: str, user_id: int):
+async def start_actual_download(message: Message, download_data: dict, lang: str, user_status: str, user_id: int, state: FSMContext):
     status_msg = await message.answer(text=LOCALIZATION[lang]["processing"], parse_mode="Markdown")
     limits = config.get_plan_limits(user_status)
     max_timeout = limits.get("max_timeout_per_request", 180)
@@ -40,27 +41,30 @@ async def start_actual_download(message: Message, download_data: dict, lang: str
                 raise e
             
             for file_path in output_files:
-                if os.path.exists(file_path):
-                    filename = os.path.basename(file_path)
-                    await status_msg.edit_text(LOCALIZATION[lang]["uploading"].format(filename=filename), parse_mode="Markdown")
-                    audio_file = FSInputFile(file_path)
-                    thumb_path = f"{file_path}.jpg"
-                    thumb_file = None
-                    
-                    try:
-                        tags = ID3(file_path)
-                        for key in tags.keys():
-                            if key.startswith('APIC'):
-                                with open(thumb_path, 'wb') as img_file:
-                                    img_file.write(tags[key].data)
-                                thumb_file = FSInputFile(thumb_path)
-                                break
-                    except Exception as e:
-                        print(f"⚠️ Unable to extract thumbnail for Telegram: {e}")
-                    
-                    await message.answer_audio(audio=audio_file, thumbnail=thumb_file)
-                    await db.track_download(user_id, 1)
-                    
+                thumb_path = f"{file_path}.jpg"
+                
+                try:
+                    if os.path.exists(file_path):
+                        filename = os.path.basename(file_path)
+                        await status_msg.edit_text(LOCALIZATION[lang]["uploading"].format(filename=filename), parse_mode="Markdown")
+                        audio_file = FSInputFile(file_path)
+                        thumb_file = None
+                        
+                        try:
+                            tags = ID3(file_path)
+                            for key in tags.keys():
+                                if key.startswith('APIC'):
+                                    with open(thumb_path, 'wb') as img_file:
+                                        img_file.write(tags[key].data)
+                                    thumb_file = FSInputFile(thumb_path)
+                                    break
+                        except Exception as e:
+                            print(f"⚠️ Unable to extract thumbnail for Telegram: {e}")
+                        
+                        await message.answer_audio(audio=audio_file, thumbnail=thumb_file)
+                        await db.track_download(user_id, 1)
+                
+                finally:
                     if os.path.exists(file_path):
                         os.remove(file_path)
                     if os.path.exists(thumb_path):
@@ -69,15 +73,28 @@ async def start_actual_download(message: Message, download_data: dict, lang: str
         await status_msg.delete()
         menu_keyboard = InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text=LOCALIZATION[lang]["main_menu"]["button"], callback_data=f"main_menu_{lang}")]])
         await message.answer(LOCALIZATION[lang]["success_text"], reply_markup=menu_keyboard, parse_mode="Markdown")
+
     except Exception as e:
         await db.track_error()
         print(f"💥 DOWNLOAD EXECUTION CRASHED: {e}")
         back_keyboard = InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text=LOCALIZATION[lang]["back"], callback_data=f"main_menu_{lang}")]])
         error_msg = LOCALIZATION[lang].get("error_msg", "An error occurred:")
         await message.answer(f"{error_msg}\n`{str(e)}`", reply_markup=back_keyboard, parse_mode="Markdown")
+        
+    finally:
+        current_state = await state.get_state()
+        if current_state == DownloadStates.processing_download.state:
+            await state.set_state(None)
 
 @router.message(F.text)
 async def handle_download(message: Message, state: FSMContext):
+    current_state = await state.get_state()
+    state_data = await state.get_data()
+    saved_lang = state_data.get("user_lang")
+    lang = saved_lang if saved_lang else (message.from_user.language_code if message.from_user.language_code in LOCALIZATION else "en")
+    if current_state == DownloadStates.processing_download.state:
+        await message.answer(LOCALIZATION[lang]["in_progress"], parse_mode="Markdown")
+        return
     user_id = message.from_user.id
     await db.register_user(user_id)
     user_data = await db.get_user(user_id)
@@ -151,27 +168,53 @@ async def handle_download(message: Message, state: FSMContext):
         await message.answer(LOCALIZATION[lang]["confirm_title"].format(count=total_count), reply_markup=keyboard, parse_mode="Markdown")
         return
 
-    await start_actual_download(message, result, lang, user_status, user_id)
+    await state.set_state(DownloadStates.processing_download)
+    await state.update_data(user_lang=lang)
+    
+    await start_actual_download(message, result, lang, user_status, user_id, state)
             
 @router.callback_query(DownloadStates.confirm_download, F.data == "confirm_dl_no")
 async def cancel_download_callback(callback: CallbackQuery, state: FSMContext):
+    current_state = await state.get_state()
+    
+    if current_state == DownloadStates.processing_download.state:
+        data = await state.get_data()
+        lang = data.get("user_lang", "en") # берем сохраненный язык
+        
+        await callback.answer(
+            text="Качание уже запущено, отмена невозможна!" if lang == "ru" else "Завантаження вже розпочато, скасування неможливе!", 
+            show_alert=True
+        )
+        return
+
     data = await state.get_data()
     lang = data.get("download_lang", "en")
+    
     await state.clear()
+    await state.update_data(user_lang=lang) # фикс языка, который мы сделали
     
     await callback.message.edit_text(LOCALIZATION[lang]["download_cancelled"], reply_markup=get_back_keyboard(lang), parse_mode="Markdown")
     await callback.answer()
 
 @router.callback_query(DownloadStates.confirm_download, F.data == "confirm_dl_yes")
 async def accept_download_callback(callback: CallbackQuery, state: FSMContext):
+    current_state = await state.get_state()
+    if current_state == DownloadStates.processing_download.state:
+        await callback.answer()
+        return
+
     data = await state.get_data()
     result = data.get("download_result")
     lang = data.get("download_lang", "en")
     user_status = data.get("user_status", "user")
     
-    await state.clear()
+    await state.set_state(DownloadStates.processing_download)
     await state.update_data(user_lang=lang)
     
     await callback.answer()
-    await callback.message.delete()
-    await start_actual_download(callback.message, result, lang, user_status, callback.from_user.id)
+    try:
+        await callback.message.delete()
+    except Exception:
+        pass 
+        
+    await start_actual_download(callback.message, result, lang, user_status, callback.from_user.id, state)
