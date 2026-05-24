@@ -89,7 +89,7 @@ Handles link validation, extraction, and platform sorting.
 from core.ssyd import URLParser
 
 parser = URLParser()
-result, total_count = parser.link_preparer("Check this out: [https://soundcloud.com/track-link](https://soundcloud.com/track-link)")
+result, total_count = parser.link_preparer("Check this out: https://soundcloud.com/track-link")
 # result -> dict: { url: (platform, mediatype) }
 # total_count -> int: total number of tracks found
 
